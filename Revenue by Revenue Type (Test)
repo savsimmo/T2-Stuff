@@ -1,0 +1,131 @@
+select sum(rec.rec_amount) as "Revenue in $", 'Permit' as "Category"
+
+from receipt rec
+
+join financial_transaction fit on rec.rec_uid = fit.rec_uid_receipt and 
+
+fit.fit_occurrence_date between to_date(:StartDateFiscalYear) and 
+
+(add_months(:StartDateFiscalYear, 12) - 1) and fit.tab_uid_source_obj_type = 
+
+10
+
+join permission per on fit.fit_source_obj_uid = per.per_uid and not exists 
+
+(select 'a' from per_fac_rel pef where "PER".per_uid = 
+
+pef.per_uid_permission);
+
+select sum(rec.rec_amount) as "Revenue in $", 'Event' as "Category"
+
+from receipt rec
+
+inner join financial_transaction fit on rec.rec_uid = fit.rec_uid_receipt and 
+
+fit.fit_occurrence_date between to_date(:StartDateFiscalYear) and 
+
+(add_months(:StartDateFiscalYear, 12) - 1)  and fit.tab_uid_source_obj_type = 
+
+316
+
+inner join event eve on eve.eve_uid = fit.fit_source_obj_uid;
+
+select sum(rec.rec_amount) as "Revenue in $", 'Citation' as "Category"
+
+from receipt rec
+
+join financial_transaction fit on rec.rec_uid = fit.rec_uid_receipt and 
+
+fit.fit_occurrence_date between to_date(:StartDateFiscalYear) and 
+
+(add_months(:StartDateFiscalYear, 12) - 1) and fit.tab_uid_source_obj_type = 
+
+13
+
+join contravention con on con.con_uid = fit.fit_source_obj_uid;
+
+select NVL(SUM(DAILY_REVENUE),0) as "Revenue in $", 'Facility' as "Category"
+
+FROM (
+
+  SELECT NVL(SUM(FIT.FIT_AMOUNT) * - 1, 0) AS "DAILY_REVENUE", 'Facility' as 
+
+"Category"
+
+  FROM FINANCIAL_TRANSACTION FIT
+
+  INNER JOIN RECEIPT REC
+
+  ON FIT.REC_UID_RECEIPT = REC.REC_UID AND fit.fit_occurrence_date between 
+
+to_date(:StartDateFiscalYear) and (add_months(:StartDateFiscalYear, 12) - 1) 
+
+AND
+
+    FIT.TAB_UID_SOURCE_OBJ_TYPE = 10
+
+  INNER JOIN PERMISSION PER
+
+  ON PER.PER_UID = FIT.FIT_SOURCE_OBJ_UID
+
+  INNER JOIN PERMISSION_NUMBER_RANGE PNA
+
+  ON PNA.PNA_UID                  = PER.PNA_UID_PER_NUM_RANGE
+
+  AND (PNA.PET_UID_SERIES_TYPE    = 4
+
+  OR PNA.PPL_UID_PERMISSION_TYPE IN
+
+    (SELECT PPL_UID FROM PHYSICAL_PER_TYPE_MLKP WHERE PPG_UID_PHYS_GROUP_TYPE 
+
+= 6
+
+    ))
+
+  INNER JOIN CASHDRAWER_SESSION CAS
+
+  ON REC.CAS_UID_CASHDRAWER_SESSION = CAS.CAS_UID
+
+  INNER JOIN POS_STATION POS
+
+  ON CAS.PSM_UID_STATION = POS.PSM_UID
+
+  INNER JOIN POS_FACILITY_REL FACREL
+
+  ON POS.PSM_UID = FACREL.PSM_UID_STATION
+
+  INNER JOIN FACILITY FAC ON FAC.FAC_UID = FACREL.FAC_UID_FACILITY
+
+  UNION
+
+  SELECT NVL(SUM(FIT.FIT_AMOUNT) * - 1, 0) AS "DAILY_REVENUE",
+
+    'Facility' as "Category"
+
+  FROM FINANCIAL_TRANSACTION FIT
+
+  INNER JOIN RECEIPT REC
+
+  ON FIT.REC_UID_RECEIPT = REC.REC_UID AND  fit.fit_occurrence_date between 
+
+to_date(:StartDateFiscalYear) and (add_months(:StartDateFiscalYear, 12) - 1) 
+
+AND
+
+    FIT.TAB_UID_SOURCE_OBJ_TYPE = 332
+
+  INNER JOIN CASHDRAWER_SESSION CAS
+
+  ON REC.CAS_UID_CASHDRAWER_SESSION = CAS.CAS_UID
+
+  INNER JOIN POS_STATION POS
+
+  ON CAS.PSM_UID_STATION = POS.PSM_UID
+
+  INNER JOIN POS_FACILITY_REL FACREL
+
+  ON POS.PSM_UID = FACREL.PSM_UID_STATION
+
+   INNER JOIN FACILITY FAC ON FAC.FAC_UID = FACREL.FAC_UID_FACILITY
+
+  );
